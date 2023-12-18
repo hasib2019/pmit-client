@@ -1,0 +1,361 @@
+openapi: 3.0.0
+info:
+  version: v1.0.0
+  title: Fintech-Vision-AI
+  description: OpenAPI Spec for Fintech Vision AI API's
+servers:
+  - url: http://3.14.177.130
+    description: Live Server
+  - url: http://localhost:5000
+    description: Development Server
+
+paths:
+  /faceapi/compare:
+    post:
+      description: Face Compare API using two base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceCompare"
+      responses:
+        "200":
+          description: Successful Face Compare responses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      match:
+                        type: string
+                        enum:
+                          - YES
+                          - NO
+                      euclideanDistance:
+                        type: number
+                      percantage:
+                        type: number
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+  /faceapi/detect/liveliness:
+    post:
+      description: Face Liveliness detection API using single base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceLiveness"
+
+      responses:
+        "200":
+          description: Successful Face Liveliness response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      result:
+                        type: string
+                        enum:
+                          - LIVE
+                          - SPOOF
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+  /faceapi/count:
+    post:
+      description: Face Count with locations using single base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceImage"
+
+      responses:
+        "200":
+          description: Successful Face Count response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                      locations:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+  /faceapi/encodings:
+    post:
+      description: Face 128d Encodings using single base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceImage"
+
+      responses:
+        "200":
+          description: Successful Face Encodings response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      encodings:
+                        type: array
+                        items:
+                          type: number
+
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+  /faceapi/crop:
+    post:
+      description: Face Crop using single base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceImage"
+
+      responses:
+        "200":
+          description: Successful Face Crop response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      image:
+                        type: string
+                        format: byte
+
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+  /faceapi/detect/eye:
+    post:
+      description: Eye and eye status detect using single base64 image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaceImage"
+
+      responses:
+        "200":
+          description: Successful Eye Detect response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      eye:
+                        type: string
+                        enum:
+                          - FOUND
+                          - NOT_FOUND
+                      status:
+                        type: string
+                        enum:
+                          - OPEN
+                          - CLOSE
+
+        "400":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "401":
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/400Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/500Error"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    FaceCompare:
+      type: object
+      required:
+        - sourceImage
+        - targetImage
+      properties:
+        sourceImage:
+          type: string
+          format: byte
+        targetImage:
+          type: string
+          format: byte
+    FaceLiveness:
+      required:
+        - faceImage
+      properties:
+        faceImage:
+          type: string
+          format: byte
+    FaceImage:
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          format: byte
+
+  responses:
+    400Error:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              errors: {}
+    500Error:
+      description: Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+security:
+  - ApiKeyAuth: []

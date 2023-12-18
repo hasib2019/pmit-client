@@ -1,0 +1,870 @@
+/**
+ * @author Md Hasibuzzaman
+ * @email hasib.9437.hu@gmail.com
+ * @create date 2022/07/20 05:00:00
+ * @modify date 2022/07/20 05:00:00
+ * @desc [description]
+ */
+import { Box, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import axios from 'axios';
+import SubHeading from 'components/shared/others/SubHeading';
+import { useEffect, useState } from 'react';
+import 'react-medium-image-zoom/dist/styles.css';
+import ZoomImage from 'service/ZoomImage';
+import { localStorageData } from 'service/common';
+import { dateFormat } from 'service/dateFormat';
+import { errorHandler } from 'service/errorHandler';
+import { numberToWord } from 'service/numberToWord';
+import { unescape } from 'underscore';
+import { SamityRegistrationReport } from '../../../url/coop/ApiList';
+
+// const style = {
+//   position: 'absolute',
+//   left: '50%',
+//   transform: 'translate(-50%, 0%)',
+//   width: { sx: '100%', md: '1000px' },
+//   bgcolor: 'background.paper',
+//   border: '2px solid #000',
+//   boxShadow: 24,
+//   p: 3,
+// };
+
+const TempSamityReport = ({ pendingSamityId }) => {
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  const config = localStorageData('config');
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  const [samityInfo, setSamityInfo] = useState([]);
+  const [committee, setCommittee] = useState([]);
+  const [committeePerson, setCommitteePerson] = useState([]);
+  const [incomeExpenses, setIncomeExpenses] = useState([]);
+  const [totalExpAmt, setTotalExpAmt] = useState('');
+  const [totalIncAmt, setTotalIncAmt] = useState('');
+  const [membersData, setMembersData] = useState([]);
+  const [samityDocuments, setSamityDocuments] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [workingArea, setWorkingArea] = useState([]);
+  const [memberArea, setMemberArea] = useState([]);
+  const [element, setElement] = useState('');
+  const [loadData, setLoadData] = useState(false);
+  const [samityLevel, setSamityLevel] = useState(null);
+
+  const budgetkey = Object.keys(budgets);
+  useEffect(() => {
+    samityReport(pendingSamityId);
+  }, [pendingSamityId]);
+
+  const samityReport = async (samityId) => {
+    try {
+      setLoadData(true);
+      const samityData = await axios.get(SamityRegistrationReport + samityId, config);
+      const data = samityData.data.data;
+      setSamityInfo(data.samityInfo);
+      setSamityLevel(data.samityInfo.samityLevel);
+      setCommittee(data.committee.committeeMembers);
+      setCommitteePerson(data.committee);
+      const memberAllData = data.members;
+      let filterData = [...memberAllData];
+      filterData.sort((a, b) => a.memberCode - b.memberCode);
+      setMembersData(filterData);
+      setSamityDocuments(data.samityDocuments);
+      setBudgets(data.budgets);
+      setIncomeExpenses(data.incomeExpenses);
+      setWorkingArea(data.workingArea);
+      setMemberArea(data.memberArea);
+      setElement(data.byLaw);
+      let expAmount = 0;
+      for (let i = 0; data.incomeExpenses && i < data.incomeExpenses.length; i++) {
+        expAmount += parseFloat(data.incomeExpenses[i].expAmt);
+      }
+      setTotalExpAmt(expAmount.toFixed(2));
+      let incAmount = 0;
+      for (let i = 0; data.incomeExpenses && i < data.incomeExpenses.length; i++) {
+        incAmount += parseFloat(data.incomeExpenses[i].incAmt);
+      }
+      setTotalIncAmt(incAmount.toFixed(2));
+      setLoadData(false);
+    } catch (error) {
+      errorHandler(error);
+      setLoadData(false);
+    }
+  };
+
+  const cenNatMemName = (memberId, samityLevel) => {
+    let memberName = null;
+    if (membersData && samityLevel == 'C') {
+      memberName = membersData.find((elements) => elements.id == memberId)?.samitySignatoryPerson;
+    } else {
+      memberName = membersData.find((elements) => elements.id == memberId)?.samitySignatoryPerson;
+    }
+    return memberName;
+  };
+  const totalIncAmount = (inc) => {
+    let incAmount = 0;
+    for (let i = 0; inc && i < inc.length; i++) {
+      incAmount += parseFloat(inc[i].incAmt);
+    }
+    return incAmount.toFixed(2);
+  };
+  const totalExpAmtmount = (inc) => {
+    let expAmount = 0;
+    for (let i = 0; inc && i < inc.length; i++) {
+      expAmount += parseFloat(inc[i].expAmt);
+    }
+    return expAmount.toFixed(2);
+  };
+  const imageType = (imageName) => {
+    if (imageName) {
+      const lastWord = imageName.split('.').pop();
+      return lastWord;
+    }
+  };
+  return (
+    <>
+      {loadData ? (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            width: '100vw',
+            background: 'rgba(0,0,0,0.7)',
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translate(-50%, 1%)',
+            width: '80%',
+            bgcolor: 'var(--color-bg)',
+            boxShadow: 8,
+            borderRadius: '1rem',
+          }}
+        >
+          <div
+            id="modal-modal-title"
+            style={{
+              textAlign: 'center',
+              fontSize: '20px',
+              background: 'var(--color-bg-topbar)',
+              borderRadius: '1rem 1rem 0 0',
+              padding: '1rem 0',
+            }}
+          >
+            সমিতির বিস্তারিত তথ্য
+          </div>
+          <Grid container sx={{ padding: '1.5rem 1rem 0' }}>
+            <Grid
+              item
+              xs={12}
+              sx={{
+                boxShadow: '0 0 10px -5px rgba(0,0,0,0.4)',
+                padding: '2rem',
+                borderRadius: '.5rem',
+                marginBottom: '2rem',
+              }}
+            >
+              <Grid container spacing={2.5}>
+                <Grid item md={6} xs={12}>
+                  <div className="info">
+                    <span className="label">সমিতির নাম :&nbsp;</span>
+                    {samityInfo.samityName}{' '}
+                    <b>
+                      ({' '}
+                      {samityInfo.samityLevel == 'P'
+                        ? 'প্রাথমিক'
+                        : samityInfo.samityLevel == 'C'
+                          ? 'কেন্দ্রিয়'
+                          : samityInfo.samityLevel == 'N'
+                            ? 'জাতীয়'
+                            : ''}{' '}
+                      )
+                    </b>
+                  </div>
+                  <div className="info">
+                    <span className="label">সমিতি গঠনের তারিখ :&nbsp;</span>
+                    {samityInfo.samityFormationDate &&
+                      numberToWord('' + dateFormat(samityInfo.samityFormationDate) + '')}
+                  </div>
+                </Grid>
+                <Grid
+                  item
+                  md={6}
+                  xs={12}
+                  sx={{
+                    paddingTop: { xs: '0 !important', md: '12px !important' },
+                  }}
+                >
+                  <div className="info">
+                    <span className="label">সমিতির ধরন :&nbsp;</span>
+                    {samityInfo.samityTypeName}
+                  </div>
+                  {samityInfo.samityLevel == 'P' ? (
+                    <div className="info">
+                      <span className="label">প্রকল্পের নাম :&nbsp;</span>
+                      {samityInfo.projectNameBangla}
+                    </div>
+                  ) : (
+                    ''
+                  )}
+                </Grid>
+                <Grid item xs={12} sx={{ paddingTop: '0px !important' }}>
+                  <div className="info">
+                    <span className="label">সমিতির ঠিকানা :&nbsp;</span>
+                    {samityInfo.samityDetailsAddress}, {samityInfo.uniThanaPawNameBangla},&nbsp;
+                    {samityInfo.upaCityNameBangla}, {samityInfo.officeDistrictNameBangla}
+                    ,&nbsp;
+                    {samityInfo.officeDivisionNameBangla}
+                  </div>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid item xs={12}>
+              <SubHeading>সমিতির এলাকা</SubHeading>
+              <Grid container className="section">
+                <TableContainer className="table-container">
+                  <Table sx={{ minWidth: 700 }} size="small" aria-label="a dense table">
+                    <TableHead className="table-head">
+                      <TableRow>
+                        <TableCell> বিবরণ </TableCell>
+                        <TableCell> বিভাগ </TableCell>
+                        <TableCell> জেলা </TableCell>
+                        <TableCell> উপজেলা/সিটি কর্পোরেশন </TableCell>
+                        <TableCell> ইউানয়ন/পৌরসভা/ওয়ার্ড </TableCell>
+                        <TableCell> গ্রাম/মহল্লা </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {memberArea?.map((member, i) => (
+                        <TableRow key={i}>
+                          <TableCell component="th" scope="row">
+                            সদস্য নির্বাচনী এলাকা
+                          </TableCell>
+                          <TableCell>{member.divisionNameBangla}</TableCell>
+                          <TableCell>{member.districtNameBangla}</TableCell>
+                          <TableCell>{member.upaCityNameBangla}</TableCell>
+                          <TableCell>{member.uniThanaPawNameBangla}</TableCell>
+                          <TableCell>{member.detailsAddress}</TableCell>
+                        </TableRow>
+                      ))}
+                      {workingArea?.map((working) => (
+                        <TableRow key={working.divisionName}>
+                          <TableCell component="th" scope="row">
+                            কর্ম এলাকা
+                          </TableCell>
+                          <TableCell>{working.divisionNameBangla}</TableCell>
+                          <TableCell>{working.districtNameBangla}</TableCell>
+                          <TableCell>{working.upaCityNameBangla}</TableCell>
+                          <TableCell>{working.uniThanaPawNameBangla}</TableCell>
+                          <TableCell>{working.detailsAddress}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Grid>
+            </Grid>
+            <Grid container className="section">
+              <Grid item xs={12}>
+                <SubHeading>সদস্যের তালিকা</SubHeading>
+                <Grid container>
+                  {samityInfo.samityLevel == 'P' ? (
+                    <TableContainer className="table-container">
+                      <Table size="small" aria-label="a dense table">
+                        <TableHead className="table-head">
+                          <TableRow>
+                            <TableCell align="center">সদস্য কোড</TableCell>
+                            <TableCell>এনআইডি/জন্ম নিবন্ধন</TableCell>
+                            <TableCell align="center">জন্মতারিখ</TableCell>
+                            <TableCell>নাম</TableCell>
+                            <TableCell>পেশা</TableCell>
+                            <TableCell align="center">মোবাইল</TableCell>
+                            {samityInfo?.isManual ? (
+                              ''
+                            ) : (
+                              <>
+                                <TableCell align="center">শেয়ার</TableCell>
+                                <TableCell align="right">সঞ্চয় (টাকা)</TableCell>
+                                <TableCell align="right">ঋণ (টাকা)</TableCell>
+                              </>
+                            )}
+                            <TableCell>ঠিকানা</TableCell>
+                            <TableCell align="center">সংযুক্তি</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {membersData != undefined
+                            ? membersData.map((memb, i) => (
+                              <TableRow key={i}>
+                                <TableCell align="center">{numberToWord('' + memb.memberCode + '')}</TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={
+                                      <div className="tooltip-title">
+                                        {memb.nid
+                                          ? numberToWord('' + memb.nid + '')
+                                          : memb.brn
+                                            ? numberToWord('' + memb.brn + '')
+                                            : ''}
+                                      </div>
+                                    }
+                                  >
+                                    <span className="data">
+                                      {memb.nid
+                                        ? numberToWord('' + memb.nid + '')
+                                        : memb.brn
+                                          ? numberToWord('' + memb.brn + '')
+                                          : ''}
+                                    </span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>{memb.dob ? numberToWord('' + dateFormat(memb.dob) + '') : ''}</TableCell>
+                                <TableCell>
+                                  <Tooltip title={<div className="tooltip-title">{memb.memberNameBangla}</div>}>
+                                    <span className="data">{memb.memberNameBangla}</span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip title={<div className="tooltip-title">{memb.occupationName}</div>}>
+                                    <span className="data">{memb.occupationName}</span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={<div className="tooltip-title">{numberToWord('' + memb.mobile + '')}</div>}
+                                  >
+                                    <span className="data">{numberToWord('' + memb.mobile + '')}</span>
+                                  </Tooltip>
+                                </TableCell>
+                                {samityInfo?.isManual ? (
+                                  ''
+                                ) : (
+                                  <>
+                                    <TableCell align="center">{numberToWord('' + memb.noOfShare + '')}</TableCell>
+                                    <TableCell align="right">{numberToWord('' + memb.savingsAmount + '')}</TableCell>
+                                    <TableCell align="right">
+                                      {numberToWord('' + memb.loanOutstanding + '')}
+                                    </TableCell>
+                                  </>
+                                )}
+
+                                <TableCell>
+                                  <Tooltip
+                                    title={
+                                      <div className="tooltip-title">
+                                        {memb?.address[0]?.detailsAddress
+                                          ? memb?.address[0]?.detailsAddress + ','
+                                          : ''}{' '}
+                                        {memb?.address[0]?.uniThanaPawNameBangla},
+                                        {memb?.address[0]?.upaCityNameBangla}, {memb?.districtNameBangla}
+                                      </div>
+                                    }
+                                  >
+                                    <span className="data">
+                                      {memb?.address[0]?.detailsAddress ? memb?.address[0]?.detailsAddress + ',' : ''}{' '}
+                                      {memb?.address[0]?.uniThanaPawNameBangla},{memb?.address[0]?.upaCityNameBangla},{' '}
+                                      {memb?.districtNameBangla}
+                                    </span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  {memb.documents?.map((img) => (
+                                    <ZoomImage
+                                      src={img?.fileNameUrl}
+                                      imageStyle={{
+                                        width: '30px',
+                                        height: '30px',
+                                      }}
+                                      divStyle={{
+                                        display: 'flex',
+                                        float: 'left',
+                                        border: '1px solid gray',
+                                        margin: '1px',
+                                      }}
+                                      key={img?.fileNameUrl}
+                                      type={imageType(img?.fileName)}
+                                    />
+                                  ))}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                            : ''}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    ''
+                  )}
+                  {samityInfo.samityLevel == 'C' || samityInfo.samityLevel == 'N' ? (
+                    <TableContainer className="table-container">
+                      <Table size="small" aria-label="a dense table">
+                        <TableHead className="table-head">
+                          <TableRow>
+                            <TableCell>ক্রমিক নং</TableCell>
+                            <TableCell>সদস্যের নাম</TableCell>
+                            <TableCell>সদস্য / সমিতি কোড</TableCell>
+                            <TableCell>স্বাক্ষরিত ব্যক্তি</TableCell>
+                            <TableCell>ফোন নং</TableCell>
+                            <TableCell>ঠিকানা</TableCell>
+                            <TableCell>সংযুক্তি</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {membersData != undefined
+                            ? membersData.map((memb, i) => (
+                              <TableRow key={i}>
+                                <TableCell scope="row" align="center">
+                                  {' '}
+                                  {numberToWord('' + (i + 1) + '')}{' '}
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip title={<div className="tooltip-title">{memb.memberName}</div>} arrow>
+                                    <span className="data">{memb.memberName}</span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={
+                                      <div className="tooltip-title">
+                                        {memb.memberCode
+                                          ? numberToWord('' + memb.memberCode + '')
+                                          : numberToWord('' + memb.centralSamityCode + '')}
+                                      </div>
+                                    }
+                                    arrow
+                                  >
+                                    <span className="data">
+                                      {memb.memberCode
+                                        ? numberToWord('' + memb.memberCode + '')
+                                        : numberToWord('' + memb.centralSamityCode + '')}
+                                    </span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={
+                                      <div className="tooltip-title">
+                                        {memb.samitySignatoryPerson || memb.signatoryPersonNameBangla}
+                                      </div>
+                                    }
+                                    arrow
+                                  >
+                                    <span className="data">
+                                      {memb.samitySignatoryPerson || memb.signatoryPersonNameBangla}
+                                    </span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={<div className="tooltip-title">{numberToWord('' + memb.phone + '')}</div>}
+                                    arrow
+                                  >
+                                    <span className="data">{numberToWord('' + memb.phone + '')}</span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  <Tooltip
+                                    title={
+                                      <div className="tooltip-title">
+                                        {memb.samityDetailsAddress || memb.centralSamityDetailsAddress}
+                                      </div>
+                                    }
+                                    arrow
+                                  >
+                                    <span className="data">
+                                      {memb.samityDetailsAddress || memb.centralSamityDetailsAddress}
+                                    </span>
+                                  </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                  {memb.documents.map((img) => (
+                                    <ZoomImage
+                                      src={img?.fileNameUrl}
+                                      imageStyle={{
+                                        width: '30px',
+                                        height: '30px',
+                                      }}
+                                      divStyle={{
+                                        display: 'flex',
+                                        float: 'left',
+                                        border: '1px solid gray',
+                                        margin: '1px',
+                                      }}
+                                      key={img?.fileNameUrl}
+                                      type={imageType(img?.fileName)}
+                                    />
+                                  ))}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                            : ''}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    ''
+                  )}
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid container className="section">
+              <Grid item xs={12}>
+                <SubHeading>কমিটির পদ বরাদ্দকরন</SubHeading>
+                <Grid
+                  container
+                  sx={{
+                    boxShadow: '0 0 10px -5px rgba(0,0,0,0.4)',
+                    padding: '1.5rem',
+                    borderRadius: '.5rem',
+                    margin: '0 0 1rem 0',
+                  }}
+                >
+                  {committeePerson.committeeOrganizer ? (
+                    <Grid item lg={4} md={6} xs={12}>
+                      <span className="label">সংগঠক :&nbsp;</span>
+                      {committeePerson.committeeOrganizer}
+                    </Grid>
+                  ) : (
+                    ''
+                  )}
+                  {committeePerson.committeeContactPerson ? (
+                    <Grid item lg={4} md={6} xs={12}>
+                      <span className="label">যোগাযোগের ব্যক্তি :&nbsp;</span>
+                      {committeePerson.committeeContactPerson}
+                    </Grid>
+                  ) : (
+                    ''
+                  )}
+                  {committeePerson.committeeSignatoryPerson ? (
+                    <Grid item lg={4} md={6} xs={12}>
+                      <span className="label">স্বাক্ষরিত ব্যক্তি :&nbsp;</span>
+                      {committeePerson.committeeSignatoryPerson}
+                    </Grid>
+                  ) : (
+                    ''
+                  )}
+                </Grid>
+                <TableContainer className="table-container">
+                  <Table size="small" aria-label="a dense table">
+                    <TableHead className="table-head">
+                      <TableRow>
+                        <TableCell align="center">ক্রমিক নং</TableCell>
+                        <TableCell>
+                          সদস্যের নাম {samityLevel == 'C' || samityLevel == 'N' ? 'ও স্বাক্ষরিত ব্যক্তি' : ''}
+                        </TableCell>
+                        <TableCell>পদবী</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {committee.map((degs, i) => (
+                        <TableRow key={i}>
+                          <TableCell scope="row" align="center">
+                            {numberToWord('' + (i + 1) + '')}
+                          </TableCell>
+                          <TableCell>
+                            {' '}
+                            {degs.memberNameBangla || degs.memberName}{' '}
+                            {samityLevel == 'C' || samityLevel == 'N'
+                              ? '- ( ' + cenNatMemName(degs.memberId, samityLevel) + ' )'
+                              : ''}
+                          </TableCell>
+                          <TableCell>{degs.roleName}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Grid>
+            </Grid>
+            <Grid container className="section">
+              <Grid item xs={12}>
+                <SubHeading>ডকুমেন্টের তথ্যাদি</SubHeading>
+                <TableContainer className="table-container">
+                  <Table size="small" aria-label="a dense table">
+                    <TableHead className="table-head">
+                      <TableRow>
+                        <TableCell align="center"> ক্রমিক নং</TableCell>
+                        <TableCell>নাম</TableCell>
+                        <TableCell>রেফারেন্স নং</TableCell>
+                        <TableCell align="center">মেয়াদ শুরুর তারিখ</TableCell>
+                        <TableCell align="center">মেয়াদ উত্তীর্ণের তারিখ</TableCell>
+                        <TableCell align="center">ছবি</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {samityDocuments?.map((row, i) => (
+                        <TableRow key={row.id}>
+                          <TableCell scope="row" sx={{ textAlign: 'center' }}>
+                            {numberToWord('' + (i + 1) + '')}
+                          </TableCell>
+                          <TableCell>{row.documentTypeDesc}</TableCell>
+                          <TableCell>{numberToWord('' + row.documentNo + '')}</TableCell>
+                          <TableCell align="center">
+                            {row.effectDate ? numberToWord(dateFormat(row.effectDate)) : ''}
+                          </TableCell>
+                          <TableCell align="center">
+                            {row.expireDate ? numberToWord(dateFormat(row.expireDate)) : ''}
+                          </TableCell>
+                          <TableCell sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <ZoomImage
+                              src={row.documentNameUrl}
+                              imageStyle={{ width: '30px', height: '30px' }}
+                              divStyle={{
+                                display: 'flex',
+                                float: 'left',
+                                border: '1px solid gray',
+                                margin: '1px',
+                              }}
+                              key={row.documentNameUrl}
+                              type={imageType(row.documentName)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Grid>
+            </Grid>
+            <Grid container>
+              <Grid item xs={12}>
+                <SubHeading>সমিতির জমা খরচের হিসাব</SubHeading>
+                <Grid container spacing={2.5}>
+                  <Grid item lg={6} xs={12}>
+                    <TableContainer className="table-container">
+                      <Table size="small" aria-label="a dense table">
+                        <TableHead className="table-head">
+                          <TableRow>
+                            <TableCell colSpan={3} className="table-title">
+                              জমা
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>লেজার / হিসাবের আইডি</TableCell>
+                            <TableCell>লেজার / হিসাবের নাম</TableCell>
+                            <TableCell align="right">টাকা</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {incomeExpenses.map(
+                            (incexps, i) =>
+                              incexps.incAmt != 0 && (
+                                <TableRow key={i}>
+                                  <TableCell>
+                                    {incexps.incAmt != 0 && numberToWord('' + incexps.glacCode + '')}
+                                  </TableCell>
+                                  <TableCell>{incexps.incAmt != 0 && incexps.glacName}</TableCell>
+                                  <TableCell sx={{ textAlign: 'right' }}>
+                                    {incexps.incAmt != 0 && numberToWord('' + incexps.incAmt + '')}
+                                  </TableCell>
+                                </TableRow>
+                              ),
+                          )}
+                          {/* total amount  */}
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              মোট
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>{numberToWord('' + totalIncAmt + '')}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              আগত তহবিল
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>{numberToWord('' + '0.00' + '')}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              সর্বমোট
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>{numberToWord('' + totalIncAmt + '')}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                  <Grid item lg={6} md={12} xs={12}>
+                    <TableContainer className="table-container">
+                      <Table size="small" aria-label="a dense table">
+                        <TableHead className="table-head">
+                          <TableRow>
+                            <TableCell colSpan={3} className="table-title">
+                              খরচ
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>লেজার / হিসাবের আইডি</TableCell>
+                            <TableCell>লেজার / হিসাবের নাম</TableCell>
+                            <TableCell align="right">টাকা</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {incomeExpenses.map(
+                            (incexps, i) =>
+                              incexps.expAmt != 0 && (
+                                <TableRow key={i}>
+                                  <TableCell>
+                                    {incexps.expAmt != 0 && numberToWord('' + incexps.glacCode + '')}
+                                  </TableCell>
+                                  <TableCell>{incexps.expAmt != 0 && incexps.glacName}</TableCell>
+                                  <TableCell sx={{ textAlign: 'right' }}>
+                                    {incexps.expAmt != 0 && numberToWord('' + incexps.expAmt + '')}
+                                  </TableCell>
+                                </TableRow>
+                              ),
+                          )}
+                          {/* total amount  */}
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              মোট
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>{numberToWord('' + totalExpAmt + '')}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              মজুদ তহবিল
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>
+                              {numberToWord('' + (totalIncAmt - totalExpAmt).toFixed(2) + '')}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                              সর্বমোট
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'right' }}>{numberToWord('' + totalIncAmt + '')}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+            {budgetkey.map((key, i) => (
+              <Grid key={i} container className="section">
+                <Grid item xs={12}>
+                  <SubHeading>
+                    সমিতির বাজেট হিসাব &nbsp;&nbsp;
+                    {key.toString()
+                      ? numberToWord('' + key.substring(0, 4) + '') + '-' + numberToWord('' + key.substring(4, 8) + '')
+                      : ''}
+                  </SubHeading>
+                  <Grid container spacing={2.5}>
+                    <Grid item lg={6} xs={12}>
+                      <TableContainer className="table-container">
+                        <Table size="small" aria-label="a dense table">
+                          <TableHead className="table-head">
+                            <TableRow>
+                              <TableCell colSpan={3} className="table-title">
+                                আয়
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>লেজার / হিসাবের আইডি</TableCell>
+                              <TableCell>লেজার / হিসাবের নাম</TableCell>
+                              <TableCell align="right">টাকা</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {budgets[key].map(
+                              (incexps, i) =>
+                                incexps.incAmt != 0 && (
+                                  <TableRow key={i}>
+                                    <TableCell>
+                                      {incexps.incAmt != 0 && numberToWord('' + incexps.glacCode + '')}
+                                    </TableCell>
+                                    <TableCell>{incexps.incAmt != 0 && incexps.glacName}</TableCell>
+                                    <TableCell sx={{ textAlign: 'right' }}>
+                                      {incexps.incAmt != 0 && numberToWord('' + incexps.incAmt + '')}
+                                    </TableCell>
+                                  </TableRow>
+                                ),
+                            )}
+                            {/* total amount  */}
+
+                            <TableRow>
+                              <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                                সর্বমোট
+                              </TableCell>
+                              <TableCell sx={{ borderRight: 1, textAlign: 'right' }}>
+                                {numberToWord('' + totalIncAmount(budgets[key]) + '')}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Grid>
+                    <Grid item lg={6} md={12} xs={12}>
+                      <TableContainer className="table-container">
+                        <Table size="small" aria-label="a dense table">
+                          <TableHead className="table-head">
+                            <TableRow>
+                              <TableCell colSpan={3} className="table-title">
+                                ব্যয়
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>লেজার / হিসাবের আইডি</TableCell>
+                              <TableCell>লেজার / হিসাবের নাম</TableCell>
+                              <TableCell align="right">টাকা</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {budgets[key].map(
+                              (incexps, i) =>
+                                incexps.expAmt != 0 && (
+                                  <TableRow key={i}>
+                                    <TableCell>
+                                      {incexps.expAmt != 0 && numberToWord('' + incexps.glacCode + '')}
+                                    </TableCell>
+                                    <TableCell>{incexps.expAmt != 0 && incexps.glacName}</TableCell>
+                                    <TableCell sx={{ textAlign: 'right' }}>
+                                      {incexps.expAmt != 0 && numberToWord('' + incexps.expAmt + '')}
+                                    </TableCell>
+                                  </TableRow>
+                                ),
+                            )}
+                            {/* total amount  */}
+                            <TableRow>
+                              <TableCell colSpan={2} sx={{ textAlign: 'right' }}>
+                                সর্বমোট
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'right' }}>
+                                {numberToWord('' + totalExpAmtmount(budgets[key]) + '')}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            ))}
+            <Grid container className="section">
+              <Grid item xs={12}>
+                <SubHeading>লক্ষ্য ও উদ্দেশ্য</SubHeading>
+                <Grid container spacing={2.5} px={2} pt={2} pl={5}>
+                  <div dangerouslySetInnerHTML={{ __html: unescape(element) }}></div>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+    </>
+  );
+};
+
+export default TempSamityReport;

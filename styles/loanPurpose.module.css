@@ -1,0 +1,4 @@
+.customDisabled input.Mui-disabled {
+  color: rgba(0, 0, 0, 0.68) !important;
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.68);
+}

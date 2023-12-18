@@ -1,0 +1,24 @@
+{
+  "fields": [
+    {
+      "label": "বিভাগ",
+      "name": "division_id",
+      "type": "division"
+    },
+    {
+      "label": "জেলা",
+      "name": "district_id",
+      "type": "district"
+    },
+    {
+      "label": "উপজেলা/সিটি কর্পোরেশন",
+      "name": "upaCityIdType",
+      "type": "upaCityIdType"
+    },
+    {
+      "label": "ইউনিয়ন/পৌরসভা/থানা",
+      "name": "uniThanaPawIdType",
+      "type": "uni-thana-paurasabha"
+    }
+  ]
+}
